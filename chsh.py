@@ -36,6 +36,17 @@ def get_default_shell():
     shell = filter(None, matches)[0].group(1)
     return shell
 
+def get_old_shell(user):
+    '''Get the current shell of a user from LDAP'''
+    ldapconn = ldap.initialize(ldap.get_option(ldap.OPT_URI))
+    userdn = USERDN % (user, get_ldap_base())
+    try:
+        result = ldapconn.search_s(userdn, ldap.SCOPE_BASE)
+        shell = result[0][1]['loginShell'][0]
+        return shell
+    except ldap.NO_SUCH_OBJECT:
+        return None
+
 def is_shell_ok(shell):
     '''Is the shell allowed in shells(5)'''
     # pylint: disable-msg=W0141
@@ -43,13 +54,18 @@ def is_shell_ok(shell):
     shells = filter(lambda s: s[0] != '#', shells)
     return any(map(lambda s: s == shell, shells))
 
-def get_ldap_base():
+def get_ldap_base(persist={}):
     '''Get LDAP base from ldap.conf(5)'''
     # pylint: disable-msg=W0141
+    if 'base' in persist:
+        return persist['base']
+
     ldap_conf = open(LDAP_CONF, 'rb')
     pattern = re.compile(r'''^\s*[bB][aA][sS][eE]\s+(.+)\s*$''')
     matches = [ pattern.search(x) for x in ldap_conf.readlines() ]
     base = filter(None, matches)[0].group(1)
+
+    persist['base'] = base
     return base
 
 def ldap_connect(binddn, passwd):
@@ -82,12 +98,13 @@ def parse_args():
 def run():
     '''The main function'''
     (opts, args) = parse_args()
-    default_shell = get_default_shell()
 
     if args:
         user = args[0]
     else:
         user = getpass.getuser()
+
+    default_shell = get_old_shell(user)
 
     if opts.binddn:
         binddn = opts.binddn
