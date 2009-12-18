@@ -36,10 +36,8 @@ def get_default_shell():
     shell = filter(None, matches)[0].group(1)
     return shell
 
-def get_old_shell(user):
+def get_old_shell(ldapconn, userdn):
     '''Get the current shell of a user from LDAP'''
-    ldapconn = ldap.initialize(ldap.get_option(ldap.OPT_URI))
-    userdn = USERDN % (user, get_ldap_base())
     try:
         result = ldapconn.search_s(userdn, ldap.SCOPE_BASE)
         shell = result[0][1]['loginShell'][0]
@@ -56,7 +54,7 @@ def is_shell_ok(shell):
 
 def get_ldap_base(persist={}):
     '''Get LDAP base from ldap.conf(5)'''
-    # pylint: disable-msg=W0141
+    # pylint: disable-msg=W0141,W0102
     if 'base' in persist:
         return persist['base']
 
@@ -68,24 +66,19 @@ def get_ldap_base(persist={}):
     persist['base'] = base
     return base
 
-def ldap_connect(binddn, passwd):
-    '''Connect to the LDAP server'''
-    ldapconn = ldap.initialize(ldap.get_option(ldap.OPT_URI))
-    ldapconn.simple_bind_s(binddn, passwd)
-    return ldapconn
-
-def change_shell(ldapconn, user, shell):
+def change_shell(ldapconn, userdn, shell):
     '''Change the shell of the specified user'''
-    userdn = USERDN % (user, get_ldap_base())
     ldapconn.modify_s(userdn, [(ldap.MOD_REPLACE, 'loginShell', shell)])
 
 def parse_args():
     '''Parse the arguments using optparse'''
     parser = optparse.OptionParser()
-    parser.add_option('-s', '--shell', action='store', dest='loginShell',
-                      help='new login shell for the user account')
     parser.add_option('-D', '-b', '--bind', '--binddn', action='store',
                       dest='binddn', help='LDAP bind DN')
+    parser.add_option('-s', '--shell', action='store', dest='shell',
+                      help='new login shell for the user account')
+    parser.add_option('-d', '--default', action='store_true', dest='default',
+                      default=False, help='Set the default shell')
 
     try:
         import optcomplete
@@ -104,15 +97,20 @@ def run():
     else:
         user = getpass.getuser()
 
-    default_shell = get_old_shell(user)
+    userdn = USERDN % (user, get_ldap_base())
+
+    ldapconn = ldap.initialize(ldap.get_option(ldap.OPT_URI))
+    default_shell = get_old_shell(ldapconn, userdn)
 
     if opts.binddn:
         binddn = opts.binddn
     else:
         binddn = USERDN % (user, get_ldap_base())
 
-    if opts.loginShell:
-        new_shell = opts.loginShell
+    if opts.shell:
+        new_shell = opts.shell
+    elif opts.default:
+        new_shell = get_default_shell()
     else:
         print 'Changing the login shell for %s' % user
         print 'Enter the new value, or press ENTER for the default'
@@ -127,8 +125,8 @@ def run():
 
     passwd = getpass.getpass('LDAP bind password:')
 
-    ldapconn = ldap_connect(binddn, passwd)
-    change_shell(ldapconn, user, new_shell)
+    ldapconn.simple_bind_s(binddn, passwd)
+    change_shell(ldapconn, userdn, new_shell)
 
 if __name__ == '__main__':
     run()
