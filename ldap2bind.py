@@ -152,6 +152,9 @@ def run():
     dcs = [v for k, v in dn if k == 'dc']
     zone = '.'.join(dcs)
 
+    if opts.zone:
+        zone = opts.zone
+
     ds = ldap.initialize(uri)
 
     if opts.binddn:
