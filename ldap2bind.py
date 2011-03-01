@@ -25,6 +25,10 @@ import time
 LDAP_CONF = '/etc/ldap/ldap.conf'
 NS_RE = re.compile('ns\d+')
 RECORD = '%(name)s\t%(ttl)s\t%(class)s\t%(type)s\t%(data)s'
+RECORDS = {'nSRecord':    'NS',
+           'mXRecord':    'MX',
+           'aRecord':     'A',
+           'cNAMERecord': 'CNAME'}
 
 def get_ldap_base(persist={}):
     '''Get LDAP base from ldap.conf(5)'''
@@ -54,53 +58,55 @@ def output_record(values):
     out_values.update(values)
     print RECORD % out_values
 
-def modifytime2epoch(mtimestr):
+def mtime2epoch(mtimestr):
     '''Convert LDAP modifyTimestamp attribute value to unix epoch timestamp.'''
     return int(time.mktime(time.strptime(mtimestr, "%Y%m%d%H%M%SZ")))
+
+def dn2name(base, zone, dn):
+    '''Convert LDAP dn to zone file record name.'''
+    # pylint: disable=C0103
+    zonedn = ','.join(['dc=%s' % x for x in zone.split('.')])
+    rdn = dn.rsplit(zonedn + ',' + base)[0].rstrip(',')
+    if rdn == '':
+        return '@'
+    rdn = [c.split('=') for c in rdn.split(',')]
+    name = '.'.join([v for k, v in rdn if k == 'dc'])
+    return name
 
 def generate_zonefile(ds, base, zone):
     '''Generates the zonefile from ldap. Does the actual work.'''
     # pylint: disable=C0103
-    hosts = ds.search_s(base,
-                        ldap.SCOPE_SUBTREE,
-                        '(objectClass=ipHost)',
-                        ['ipHostNumber', 'cn', 'modifytimestamp'])
-
-    mtimes = [modifytime2epoch(host[1]['modifyTimestamp'][0]) for host in hosts]
-    serial = max(mtimes)
+    filterstr = '(&(objectClass=dNSDomain)(associatedDomain=%s))' % zone
+    attrs = ['dc', 'modifyTimestamp', 'sOARecord'] + RECORDS.keys()
+    entries = ds.search_s(base, ldap.SCOPE_SUBTREE, filterstr, attrs)
 
     output_header(zone, 60)
-    output_record({'name': '@',
-                   'type': 'SOA',
-                   'data': ('ns1.%(zone)s. hostmaster.%(zone)s. (%(serial)s '
-                            '1200 180 1209600 60)' % {'serial': serial,
-                                                      'zone': zone})})
 
-    for host in hosts:
-        dn = [rdn.split('=') for rdn in host[0].split(',')]
-        dncn = [v for k, v in dn if k == 'cn'][0]
-        attrs = host[1]
-        output_record({'name': dncn,
-                       'type': 'A',
-                       'data': attrs['ipHostNumber'][0]})
-        for cn in attrs['cn']:
-            if cn == dncn:
-                continue
-            if cn == '@':
-                output_record({'name': cn,
-                               'type': 'A',
-                               'data': attrs['ipHostNumber'][0]})
-            elif NS_RE.match(cn):
-                output_record({'name': '@',
-                               'type': 'NS',
-                               'data': cn})
-                output_record({'name': cn,
-                               'type': 'A',
-                               'data': attrs['ipHostNumber'][0]})
-            else:
-                output_record({'name': cn,
-                               'type': 'CNAME',
-                               'data': dncn})
+    soas = [e[1]['sOARecord'][0] for e in entries if 'sOARecord' in e[1]]
+
+    if len(soas) == 1:
+        output_record({'name': '@',
+                       'type': 'SOA',
+                       'data': soas[0]})
+    else:
+        epochs = [mtime2epoch(e[1]['modifyTimestamp'][0]) for e in entries]
+        serial = max(epochs)
+
+        output_record({'name': '@',
+                       'type': 'SOA',
+                       'data': ('ns1.%(zone)s. hostmaster.%(zone)s. (%(serial)s'
+                                ' 1200 180 1209600 60)' % {'serial': serial,
+                                                           'zone': zone})})
+
+    for entry in entries:
+        name = dn2name(base, zone, entry[0])
+        attrs = entry[1]
+        for record in RECORDS.keys():
+            if record in attrs:
+                for value in attrs[record]:
+                    output_record({'name': name,
+                                   'type': RECORDS[record],
+                                   'data': value})
 
 def run():
     '''The main function'''
@@ -143,7 +149,7 @@ def run():
     if opts.uri:
         uri = opts.uri
 
-    base = 'ou=Hosts,%s' % get_ldap_base()
+    base = 'ou=DNS,%s' % get_ldap_base()
     if opts.base:
         base = opts.base
 
