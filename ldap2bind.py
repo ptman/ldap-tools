@@ -20,6 +20,7 @@
 import ldap
 import optparse
 import re
+import time
 
 LDAP_CONF = '/etc/ldap/ldap.conf'
 NS_RE = re.compile('ns\d+')
@@ -27,7 +28,7 @@ RECORD = '%(name)s\t%(ttl)s\t%(class)s\t%(type)s\t%(data)s'
 
 def get_ldap_base(persist={}):
     '''Get LDAP base from ldap.conf(5)'''
-    # pylint: disable-msg=W0141,W0102
+    # pylint: disable=W0141,W0102
     if 'base' in persist:
         return persist['base']
 
@@ -53,19 +54,27 @@ def output_record(values):
     out_values.update(values)
     print RECORD % out_values
 
+def modifytime2epoch(mtimestr):
+    '''Convert LDAP modifyTimestamp attribute value to unix epoch timestamp.'''
+    return int(time.mktime(time.strptime(mtimestr, "%Y%m%d%H%M%SZ")))
+
 def generate_zonefile(ds, base, zone):
     '''Generates the zonefile from ldap. Does the actual work.'''
-    # pylint: disable-msg=C0103
+    # pylint: disable=C0103
     hosts = ds.search_s(base,
                         ldap.SCOPE_SUBTREE,
                         '(objectClass=ipHost)',
-                        ['ipHostNumber', 'cn'])
+                        ['ipHostNumber', 'cn', 'modifytimestamp'])
+
+    mtimes = [modifytime2epoch(host[1]['modifyTimestamp'][0]) for host in hosts]
+    serial = max(mtimes)
 
     output_header(zone, 60)
     output_record({'name': '@',
                    'type': 'SOA',
-                   'data': ('ns1.%(zone)s. hostmaster.%(zone)s. (1 1200 180 '
-                            '1209600 60)' % {'zone': zone})})
+                   'data': ('ns1.%(zone)s. hostmaster.%(zone)s. (%(serial)s '
+                            '1200 180 1209600 60)' % {'serial': serial,
+                                                      'zone': zone})})
 
     for host in hosts:
         dn = [rdn.split('=') for rdn in host[0].split(',')]
@@ -138,7 +147,7 @@ def run():
     if opts.base:
         base = opts.base
 
-    # pylint: disable-msg=C0103
+    # pylint: disable=C0103
     dn = [rdn.split('=') for rdn in base.split(',')]
     dcs = [v for k, v in dn if k == 'dc']
     zone = '.'.join(dcs)
