@@ -1,0 +1,126 @@
+# dNSZone schema from http://www.venaas.no/ldap/bind-sdb/dnszone-schema.txt
+# Extended according to http://www.venaas.no/dns/bind/bind-sdb/dnszonehowto.html
+dn: cn=dnszone,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: dnszone
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.0.0 NAME 'dNSTTL' DESC 'An integer
+  denoting time to live' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.1466.115.121
+ .1.27 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.0.1 NAME 'dNSClass' DESC 'The clas
+ s of a resource record' EQUALITY caseIgnoreIA5Match SYNTAX 1.3.6.1.4.1.1466.1
+ 15.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.0.2 NAME 'zoneName' DESC 'The name
+  of a zone, i.e. the name of the highest node in the zone' EQUALITY caseIgnor
+ eIA5Match SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121
+ .1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.0.3 NAME 'relativeDomainName' DESC
+  'The starting labels of a domain name' EQUALITY caseIgnoreIA5Match SUBSTR ca
+ seIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.12 NAME 'pTRRecord' DESC 'domain
+  name pointer, RFC 1035' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Subs
+ tringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.13 NAME 'hINFORecord' DESC 'host
+  information, RFC 1035' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Subst
+ ringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.14 NAME 'mINFORecord' DESC 'mail
+ box or mail list information, RFC 1035' EQUALITY caseIgnoreIA5Match SUBSTR ca
+ seIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.16 NAME 'tXTRecord' DESC 'text s
+ tring, RFC 1035' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5SubstringsMa
+ tch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.18 NAME 'aFSDBRecord' DESC 'for 
+ AFS Data Base location, RFC 1183' EQUALITY caseIgnoreIA5Match SUBSTR caseIgno
+ reIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.24 NAME 'sIGRecord' DESC 'Signat
+ ure, RFC 2535' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5SubstringsMatc
+ h SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.17 NAME 'rPRecord' DESC 'Respon
+ sible person, RFC 1138' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Subst
+ ringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.249 NAME 'tKEYRecord' DESC 'Sec
+ ret key, RFC 2930' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substrings
+ Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.250 NAME 'tSIGRecord' DESC 'Tra
+ nsaction signature, RFC 2845' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA
+ 5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.32768 NAME 'tARecord' DESC 'DNS
+ SEC Trust Authorities' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substr
+ ingsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.32769 NAME 'dLVRecord' DESC 'DN
+ SSEC Lookaside Validation, RFC 4431' EQUALITY caseIgnoreIA5Match SUBSTR caseI
+ gnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.42 NAME 'aPLRecord' DESC 'Addre
+ ss Prefix List, RFC 3123' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Sub
+ stringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.45 NAME 'iPSECKEYRecord' DESC '
+ IPSEC Key, RFC 4025' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substrin
+ gsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.48 NAME 'dNSKEYRecord' DESC 'DN
+ SSEC Key, RFC 4034' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substring
+ sMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.49 NAME 'dHCIDRecord' DESC 'DHC
+ P identifier, RFC 4701' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Subst
+ ringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.25 NAME 'kEYRecord' DESC 'Key, 
+ RFC 2535' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5SubstringsMatch SYN
+ TAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.28 NAME 'aAAARecord' DESC 'IPv6
+  address, RFC 1886' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substring
+ sMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.29 NAME 'lOCRecord' DESC 'Locat
+ ion, RFC 1876' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5SubstringsMatc
+ h SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.30 NAME 'nXTRecord' DESC 'non-e
+ xistant, RFC 2535' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substrings
+ Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.33 NAME 'sRVRecord' DESC 'servi
+ ce location, RFC 2782' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substr
+ ingsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.35 NAME 'nAPTRRecord' DESC 'Nam
+ ing Authority Pointer, RFC 2915' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnor
+ eIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.36 NAME 'kXRecord' DESC 'Key Ex
+ change Delegation, RFC 2230' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5
+ SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.37 NAME 'cERTRecord' DESC 'cert
+ ificate, RFC 2538' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substrings
+ Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.38 NAME 'a6Record' DESC 'A6 Rec
+ ord Type, RFC 2874' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substring
+ sMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.43 NAME 'dSRecord' DESC 'Delega
+ tion Signer, RFC 3658' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5Substr
+ ingsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.44 NAME 'sSHFPRecord' DESC 'SSH
+  Key Fingerprint, draft-ietf-secsh-dns-05.txt' EQUALITY caseIgnoreIA5Match SU
+ BSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.46 NAME 'rRSIGRecord' DESC 'RRS
+ IG, RFC 3755' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5SubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.47 NAME 'nSECRecord' DESC 'NSEC
+ , RFC 3755' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5SubstringsMatch S
+ YNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.39 NAME 'dNAMERecord' DESC 'Non
+ -Terminal DNS Name Redirection, RFC 2672' EQUALITY caseIgnoreIA5Match SUBSTR 
+ caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.50 NAME 'nSEC3Record' DESC 'NSE
+ C record version 3, RFC 5155' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA
+ 5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.51 NAME 'nSEC3PARAMRecord' DESC
+  'NSEC3 parameters, RFC 5155' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA
+ 5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.55 NAME 'hIPRecord' DESC 'Host 
+ Identity Protocol, RFC 5205' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5
+ SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcAttributeTypes: ( 1.3.6.1.4.1.2428.20.1.99 NAME 'sPFRecord' DESC 'Sende
+ r Policy Framework, RFC 4408' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA
+ 5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 )
+olcObjectClasses: ( 1.3.6.1.4.1.2428.20.3 NAME 'dNSZone' SUP top STRUCTURAL
+  MUST ( zoneName $ relativeDomainName ) MAY ( dNSTTL $ dNSClass $ aRecord $ m
+ DRecord $ mXRecord $ nSRecord $ sOARecord $ cNAMERecord $ pTRRecord $ hINFORe
+ cord $ mINFORecord $ tXTRecord $ aFSDBRecord $ sIGRecord $ kEYRecord $ aAAARe
+ cord $ lOCRecord $ nXTRecord $ sRVRecord $ nAPTRRecord $ kXRecord $ cERTRecor
+ d $ a6Record $ dNAMERecord $ dSRecord $ sSHFPRecord $ rRSIGRecord $ nSECRecor
+ d $ aPLRecord $ dHCIDRecord $ dLVRecord $ dNSKEYRecord $ hIPRecord $ iPSECKEY
+ Record $ nSEC3PARAMRecord $ nSEC3Record $ rPRecord $ sPFRecord $ tARecord $ t
+ KEYRecord $ tSIGRecord ))
