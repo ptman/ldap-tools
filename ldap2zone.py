@@ -78,7 +78,7 @@ SOA_DEFAULTS = {'refresh':  1200, # RFC1912
 
 def get_ldap_base(persist={}):
     '''Get LDAP base from ldap.conf(5)'''
-    # pylint: disable=W0141,W0102
+    # pylint: disable-msg=W0141,W0102
     if 'base' in persist:
         return persist['base']
 
@@ -134,7 +134,7 @@ def output_soa(entries, zone_entry):
 
 def generate_zonefile(ds, base, zone):
     '''Generates the zonefile from ldap. Does the actual work.'''
-    # pylint: disable=C0103
+    # pylint: disable-msg=C0103
     filterstr = '(&(objectClass=dNSRecord)(zoneName=%s))' % zone
     attrs = ['relativeDomainName', 'modifyTimestamp', 'sOARecord',
              'sOANameServer', 'sOAEmail', 'sOASerial', 'sOARetry',
@@ -154,17 +154,17 @@ def generate_zonefile(ds, base, zone):
 
     for entry in entries:
         attrs = entry[1]
-        name = attrs['relativeDomainName'][0]
         ttl = ''
         if 'dNSTTL' in attrs and attrs['dNSTTL'][0] != default_ttl:
             ttl = attrs['dNSTTL'][0]
-        for attr in RECORD_ATTRIBUTES:
-            if attr in attrs:
-                for value in attrs[attr]:
-                    output_record({'name': name,
-                                   'ttl':  ttl,
-                                   'type': attribute2type(attr),
-                                   'data': value})
+        for name in attrs['relativeDomainName']:
+            for attr in RECORD_ATTRIBUTES:
+                if attr in attrs:
+                    for value in attrs[attr]:
+                        output_record({'name': name,
+                                       'ttl':  ttl,
+                                       'type': attribute2type(attr),
+                                       'data': value})
 
 def run():
     '''The main function'''
@@ -211,7 +211,7 @@ def run():
     if opts.base:
         base = opts.base
 
-    # pylint: disable=C0103
+    # pylint: disable-msg=C0103
     dn = [rdn.split('=') for rdn in base.split(',')]
     dcs = [v for k, v in dn if k == 'dc']
     zone = '.'.join(dcs)

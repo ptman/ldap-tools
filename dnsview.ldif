@@ -1,6 +1,6 @@
 # dnsview schema
 # author: Paul Tötterman <paul.totterman@iki.fi>
-# for use with ldap2bind.py (and dNSZone schema)
+# for use with ldap2zone.py (and dNSZone schema)
 dn: cn=dnsview,cn=schema,cn=config
 objectClass: olcSchemaConfig
 cn: dnsview
