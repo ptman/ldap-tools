@@ -24,11 +24,57 @@ import time
 
 LDAP_CONF = '/etc/ldap/ldap.conf'
 NS_RE = re.compile('ns\d+')
-RECORD = '%(name)s\t%(ttl)s\t%(class)s\t%(type)s\t%(data)s'
-RECORDS = {'nSRecord':    'NS',
-           'mXRecord':    'MX',
-           'aRecord':     'A',
-           'cNAMERecord': 'CNAME'}
+RECORD = '%(name)s\t%(ttl)s\t%(type)s\t%(data)s'
+RECORD_ATTRIBUTES = ['a6Record',
+                     'aAAARecord',
+                     'aFSDBRecord',
+                     'aPLRecord',
+                     'aRecord',
+                     'cERTRecord',
+                     'cNAMERecord',
+                     'dHCIDRecord',
+                     'dLVRecord',
+                     'dNAMERecord',
+                     'dNSKEYRecord',
+                     'dSRecord',
+                     'hINFORecord',
+                     'hIPRecord',
+                     'iPSECKEYRecord',
+                     'kEYRecord',
+                     'kXRecord',
+                     'lOCRecord',
+                     'mDRecord',
+                     'mINFORecord',
+                     'mXRecord',
+                     'nAPTRRecord',
+                     'nSEC3PARAMRecord',
+                     'nSEC3Record',
+                     'nSECRecord',
+                     'nSRecord',
+                     'nXTRecord',
+                     'pTRRecord',
+                     'rPRecord',
+                     'rRSIGRecord',
+                     'sIGRecord',
+                     #'sOARecord', # special case
+                     'sPFRecord',
+                     'sRVRecord',
+                     'sSHFPRecord',
+                     'tARecord',
+                     'tKEYRecord',
+                     'tSIGRecord',
+                     'tXTRecord']
+SOA_ATTRIBUTES = {'sOANameServer': 'ns',
+                  'sOAEmail':      'email',
+                  'sOASerial':     'serial',
+                  'sOARefresh':    'refresh',
+                  'sOARetry':      'retry',
+                  'sOAExpire':     'expire',
+                  'sOANegCache':   'negcache'}
+SOA_DEFAULTS = {'refresh':  1200, # RFC1912
+                'retry':    180,
+                'expire':   1209600, # RFC1912
+                'negcache': 60}
 
 def get_ldap_base(persist={}):
     '''Get LDAP base from ldap.conf(5)'''
@@ -53,59 +99,71 @@ def output_header(zone, ttl):
 
 def output_record(values):
     '''Output a single DNS record.'''
-    default_values = {'ttl': '', 'class': 'IN'}
-    out_values = default_values.copy()
-    out_values.update(values)
-    print RECORD % out_values
+    print RECORD % values
 
 def mtime2epoch(mtimestr):
     '''Convert LDAP modifyTimestamp attribute value to unix epoch timestamp.'''
     return int(time.mktime(time.strptime(mtimestr, "%Y%m%d%H%M%SZ")))
 
-def dn2name(base, zone, dn):
-    '''Convert LDAP dn to zone file record name.'''
-    # pylint: disable=C0103
-    zonedn = ','.join(['dc=%s' % x for x in zone.split('.')])
-    rdn = dn.rsplit(zonedn + ',' + base)[0].rstrip(',')
-    if rdn == '':
-        return '@'
-    rdn = [c.split('=') for c in rdn.split(',')]
-    name = '.'.join([v for k, v in rdn if k == 'dc'])
-    return name
+def attribute2type(attribute):
+    '''Convert LDAP attribute name to DNS record type.'''
+    return attribute.split('Record')[0].upper()
+
+def output_soa(entries, zone_entry):
+    '''Output SOA record based on existing values in zone entry or guesses.'''
+    if 'sOARecord' in zone_entry[1]:
+        output_record({'name': zone_entry[1]['relativeDomainName'][0],
+                       'type': attribute2type('sOARecord'),
+                       'data': zone_entry[1]['sOARecord'][0]})
+    else:
+        soa_values = SOA_DEFAULTS.copy()
+        for attr in SOA_ATTRIBUTES.keys():
+            if attr in zone_entry[1]:
+                soa_values[SOA_ATTRIBUTES[attr]] = zone_entry[1][attr][0]
+
+        if not 'serial' in soa_values:
+            epochs = [mtime2epoch(e[1]['modifyTimestamp'][0]) for e in entries]
+            soa_values['serial'] = max(epochs)
+
+        output_record({'name': '@',
+                       'ttl':  '',
+                       'type': 'SOA',
+                       'data': ('%(ns)s %(email)s (%(serial)s %(refresh)s '
+                                '%(retry)s %(expire)s %(negcache)s)' %
+                                soa_values)})
 
 def generate_zonefile(ds, base, zone):
     '''Generates the zonefile from ldap. Does the actual work.'''
     # pylint: disable=C0103
-    filterstr = '(&(objectClass=dNSDomain)(associatedDomain=%s))' % zone
-    attrs = ['dc', 'modifyTimestamp', 'sOARecord'] + RECORDS.keys()
+    filterstr = '(&(objectClass=dNSRecord)(zoneName=%s))' % zone
+    attrs = ['relativeDomainName', 'modifyTimestamp', 'sOARecord',
+             'sOANameServer', 'sOAEmail', 'sOASerial', 'sOARetry',
+             'sOAExpire', 'sOANegCache', 'defaultTTL', 'dNSView',
+             'dNSTTL'] + RECORD_ATTRIBUTES
     entries = ds.search_s(base, ldap.SCOPE_SUBTREE, filterstr, attrs)
 
-    output_header(zone, 60)
+    zone_entry = [e for e in entries if e[1]['relativeDomainName'][0] == '@'][0]
 
-    soas = [e[1]['sOARecord'][0] for e in entries if 'sOARecord' in e[1]]
+    default_ttl = 60
+    if 'defaultTTL' in zone_entry[1]:
+        default_ttl = zone_entry[1]['defaultTTL'][0]
 
-    if len(soas) == 1:
-        output_record({'name': '@',
-                       'type': 'SOA',
-                       'data': soas[0]})
-    else:
-        epochs = [mtime2epoch(e[1]['modifyTimestamp'][0]) for e in entries]
-        serial = max(epochs)
+    output_header(zone, default_ttl)
 
-        output_record({'name': '@',
-                       'type': 'SOA',
-                       'data': ('ns1.%(zone)s. hostmaster.%(zone)s. (%(serial)s'
-                                ' 1200 180 1209600 60)' % {'serial': serial,
-                                                           'zone': zone})})
+    output_soa(entries, zone_entry)
 
     for entry in entries:
-        name = dn2name(base, zone, entry[0])
         attrs = entry[1]
-        for record in RECORDS.keys():
-            if record in attrs:
-                for value in attrs[record]:
+        name = attrs['relativeDomainName'][0]
+        ttl = ''
+        if 'dNSTTL' in attrs and attrs['dNSTTL'][0] != default_ttl:
+            ttl = attrs['dNSTTL'][0]
+        for attr in RECORD_ATTRIBUTES:
+            if attr in attrs:
+                for value in attrs[attr]:
                     output_record({'name': name,
-                                   'type': RECORDS[record],
+                                   'ttl':  ttl,
+                                   'type': attribute2type(attr),
                                    'data': value})
 
 def run():
@@ -149,7 +207,7 @@ def run():
     if opts.uri:
         uri = opts.uri
 
-    base = 'ou=DNS,%s' % get_ldap_base()
+    base = 'ou=Hosts,%s' % get_ldap_base()
     if opts.base:
         base = opts.base
 

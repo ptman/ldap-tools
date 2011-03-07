@@ -1,0 +1,47 @@
+# dnsview schema
+# author: Paul Tötterman <paul.totterman@iki.fi>
+# for use with ldap2bind.py (and dNSZone schema)
+dn: cn=dnsview,cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: dnsview
+olcAttributeTypes: ( 1.3.6.1.4.1.35290.1.1.1.1.1 NAME 'dNSView' DESC 'DNS v
+ iew' SUP name )
+olcAttributeTypes: ( 1.3.6.1.4.1.35290.1.1.1.1.2 NAME 'sOANameServer' DESC 
+ 'SOA record name server (origin of zone data, RFC1035)' EQUALITY caseIgnoreIA
+ 5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.35290.1.1.1.1.3 NAME 'sOAEmail' DESC 'SOA 
+ record email address (mailbox resposible for zone, RFC1035)' EQUALITY caseIgn
+ oreIA5Match SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.35290.1.1.1.1.4 NAME 'sOASerial' DESC 'SOA
+  record serial number (RFC1035)' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1.146
+ 6.115.121.1.27 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.35290.1.1.1.1.5 NAME 'sOARefresh' DESC 'SO
+ A record refresh interval (RFC1035)' EQUALITY integerMatch SYNTAX 1.3.6.1.4.1
+ .1466.115.121.1.27 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.35290.1.1.1.1.6 NAME 'sOARetry' DESC 'SOA 
+ record failed refresh retry interval (RFC1035)' EQUALITY integerMatch SYNTAX 
+ 1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.35290.1.1.1.1.7 NAME 'sOAExpire' DESC 'SOA
+  record authority expiration interval (RFC1035)' EQUALITY integerMatch SYNTAX
+  1.3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.35290.1.1.1.1.8 NAME 'sOANegCache' DESC 'S
+ OA record negative cache time (RFC2308)' EQUALITY integerMatch SYNTAX 1.3.6.1
+ .4.1.1466.115.121.1.27 SINGLE-VALUE )
+olcAttributeTypes: ( 1.3.6.1.4.1.35290.1.1.1.1.9 NAME 'defaultTTL' DESC 'DN
+ S zone default TTL value (integer) (RFC2308)' EQUALITY integerMatch SYNTAX 1.
+ 3.6.1.4.1.1466.115.121.1.27 SINGLE-VALUE )
+olcObjectClasses: ( 1.3.6.1.4.1.36290.1.1.1.2.1 NAME 'dNSRecord' DESC 'DNS 
+ record (or several)' SUP top ABSTRACT MUST ( zoneName $ relativeDomainName ) 
+ MAY ( seeAlso $ description $ dNSView $ sOANameServer $ sOAEmail $ sOASerial 
+ $ sOARefresh $ sOARetry $ sOAExpire $ sOANegCache $ defaultTTL $ dNSTTL $ dNS
+ Class $ aRecord $ mDRecord $ mXRecord $ nSRecord $ sOARecord $ cNAMERecord $ 
+ pTRRecord $ hINFORecord $ mINFORecord $ tXTRecord $ aFSDBRecord $ sIGRecord $
+  kEYRecord $ aAAARecord $ lOCRecord $ nXTRecord $ sRVRecord $ nAPTRRecord $ k
+ XRecord $ cERTRecord $ a6Record $ dNAMERecord $ dSRecord $ sSHFPRecord $ rRSI
+ GRecord $ nSECRecord $ aPLRecord $ dHCIDRecord $ dLVRecord $ dNSKEYRecord $ h
+ IPRecord $ iPSECKEYRecord $ nSEC3PARAMRecord $ nSEC3Record $ rPRecord $ sPFRe
+ cord $ tARecord $ tKEYRecord $ tSIGRecord ))
+olcObjectClasses: ( 1.3.6.1.4.1.36290.1.1.1.2.2 NAME 'dNSRecordAux' DESC 'A
+ uxiliary DNS record' SUP dNSRecord AUXILIARY )
+olcObjectClasses: ( 1.3.6.1.4.1.36290.1.1.1.2.3 NAME 'dNSRecordStruct' DESC
+  'Structural DNS record' SUP dNSRecord STRUCTURAL )
