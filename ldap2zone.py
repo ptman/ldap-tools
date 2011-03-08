@@ -140,16 +140,15 @@ def generate_zonefile(ds, base, zone, views):
     if views == []:
         views = ['']
 
-    result_attrs = ['relativeDomainName', 'modifyTimestamp', 'dNSView',
-                    'dNSTTL',
-                 'defaultTTL'] + RECORD_ATTRIBUTES + SOA_ATTRIBUTES.keys()
+    query_attrs = ['relativeDomainName', 'modifyTimestamp', 'dNSView', 'dNSTTL',
+                   'defaultTTL'] + RECORD_ATTRIBUTES + SOA_ATTRIBUTES.keys()
     for view in views:
         if view != '':
             filterstr = ('(&(objectClass=dNSRecord)(zoneName=%(zone)s)'
                          '(dNSView=%(view)s))' % {'zone': zone, 'view': view})
         else:
             filterstr = '(&(objectClass=dNSRecord)(zoneName=%s))' % zone
-        entries = ds.search_s(base, ldap.SCOPE_SUBTREE, filterstr, result_attrs)
+        entries = ds.search_s(base, ldap.SCOPE_SUBTREE, filterstr, query_attrs)
 
         epochs = [mtime2epoch(e[1]['modifyTimestamp'][0]) for e in entries]
         epochs.append(computed_serial)
