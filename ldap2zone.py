@@ -77,16 +77,27 @@ SOA_DEFAULTS = {'refresh':  1200, # RFC1912
                 'expire':   1209600, # RFC1912
                 'negcache': 60}
 
-def get_ldap_base(persist={}):
-    '''Get LDAP base from ldap.conf(5)'''
-    # pylint: disable-msg=W0141,W0102
+def parse_ldap_base():
+    '''Parse LDAP base from ldap.conf(5).'''
+    # pylint: disable-msg=W0141
+    ldap_conf = open(LDAP_CONF, 'rb')
+    pattern = re.compile(r'''^\s*[bB][aA][sS][eE]\s+(.+)\s*$''')
+    matches = [pattern.search(x) for x in ldap_conf.readlines()]
+    base = filter(None, matches)[0].group(1)
+    return base
+
+def get_ldap_base(ds, persist={}):
+    '''Find out LDAP base.'''
+    # pylint: disable-msg=W0102,C0103
     if 'base' in persist:
         return persist['base']
 
-    ldap_conf = open(LDAP_CONF, 'rb')
-    pattern = re.compile(r'''^\s*[bB][aA][sS][eE]\s+(.+)\s*$''')
-    matches = [ pattern.search(x) for x in ldap_conf.readlines() ]
-    base = filter(None, matches)[0].group(1)
+    entries = ds.search_s('', ldap.SCOPE_BASE, 'objectClass=*', ('+',))
+    attrs = entries[0][1]
+    if len(attrs['namingContexts']) == 1:
+        base = attrs['namingContexts'][0]
+    else:
+        base = parse_ldap_base()
 
     persist['base'] = base
     return base
@@ -242,19 +253,19 @@ def run():
     if opts.uri:
         uri = opts.uri
 
-    base = 'ou=Hosts,%s' % get_ldap_base()
+    # pylint: disable-msg=C0103
+    ds = ldap.initialize(uri)
+
+    base = 'ou=Hosts,%s' % get_ldap_base(ds)
     if opts.base:
         base = opts.base
 
-    # pylint: disable-msg=C0103
     dn = [rdn.split('=') for rdn in base.split(',')]
     dcs = [v for k, v in dn if k == 'dc']
     zone = '.'.join(dcs)
 
     if opts.zone:
         zone = opts.zone
-
-    ds = ldap.initialize(uri)
 
     if opts.binddn:
         ds.simple_bind_s(opts.binddn, opts.bindpw)
