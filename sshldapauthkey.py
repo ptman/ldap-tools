@@ -42,7 +42,7 @@ LDAP_CONF = '/etc/ldap/ldap.conf'
 PUBKEY_RE = re.compile(r'''^((?P<options>.*) )?'''
                        r'''(?P<type>ssh-(dss|rsa|ed25519)'''
                        r'''|ecdsa-sha2-nistp(256|384|521)) '''
-                       r'''(?P<key>[^ ]*) (?P<comment>.*)$''')
+                       r'''(?P<key>[^ ]*)( (?P<comment>.*))?$''')
 
 
 def parse_ldap_base():
