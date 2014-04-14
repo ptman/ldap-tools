@@ -23,6 +23,7 @@ To run tests:
     python -m doctest sshldapauthkey.py
 """
 
+import errno
 import ldap
 import ldap.filter
 import logging
@@ -178,10 +179,18 @@ def main(args):
                 options.update(DEFAULT_OPTIONS)
 
                 if options is None:
-                    print '%s %s %s' % (typ, key, comment)
+                    line = '%s %s %s' % (typ, key, comment)
                 else:
-                    print '%s %s %s %s' % (format_options(options), typ, key,
-                                           comment)
+                    line = '%s %s %s %s' % (format_options(options), typ, key,
+                                            comment)
+
+                try:
+                    print line
+                except IOError as ioe:
+                    if ioe.errno == errno.EPIPE:
+                        logging.debug('sshd closed pipe')
+                        return
+                    logging.exception('Exception when printing')
 
 
 if __name__ == '__main__':
